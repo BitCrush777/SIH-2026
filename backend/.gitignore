@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Local SQLite databases
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+dev.db
+prisma/dev.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
+.cursor/
+.devin/

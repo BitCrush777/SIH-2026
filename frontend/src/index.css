@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-brand-bg text-brand-slate antialiased font-sans;
+  }
+}
+
+@layer components {
+  /* Common Button Styles derived from Stitch specs */
+  .btn-primary {
+    @apply bg-brand-navy text-white border border-brand-navy rounded font-semibold px-4 py-2 hover:bg-brand-navy-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-brass transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-white text-brand-navy border-[1.5px] border-brand-navy rounded font-semibold px-4 py-2 hover:bg-slate-50 transition-colors;
+  }
+
+  .btn-destructive {
+    @apply bg-white text-brand-red border-[1.5px] border-brand-red rounded font-semibold px-4 py-2 hover:bg-brand-red-light transition-colors;
+  }
+
+  .input-field {
+    @apply h-10 w-full bg-white border border-brand-slate-border-dark text-brand-slate placeholder:text-brand-slate-muted rounded-sm px-3 focus:outline-none focus:ring-1 focus:ring-brand-navy focus:border-brand-navy;
+  }
+  
+  .card {
+    @apply bg-white border border-brand-slate-border rounded shadow-sm overflow-hidden;
+  }
+
+  .badge-passed {
+    @apply border border-green-300 bg-brand-green-light text-brand-green px-2 py-0.5 rounded-sm text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1;
+  }
+
+  .badge-pending {
+    @apply border border-yellow-300 bg-brand-amber text-brand-amber-text px-2 py-0.5 rounded-sm text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1;
+  }
+
+  .badge-rejected {
+    @apply border border-red-200 bg-brand-red-light text-brand-red px-2 py-0.5 rounded-sm text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1;
+  }
+}

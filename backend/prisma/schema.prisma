@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
+  passwordHash   String?
+  role           String   // OWNER, OFFICER, ADMIN
+  supabaseAuthId String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  instruments   Instrument[]
+  applications  VerificationApplication[] @relation("Applicant")
+  inspections   VerificationInspection[]  @relation("Officer")
+  auditLogs     AuditLog[]
+  notifications Notification[]
+
+  @@index([role])
+  @@index([supabaseAuthId])
+}
+
+model InstrumentTypeRule {
+  id                 String   @id @default(uuid())
+  typeCode           String   @unique // e.g. "CLASS_II_SCALE", "PLATFORM_SCALE", "WEIGHBRIDGE", "DISPENSING_PUMP"
+  name               String   // e.g. "Electronic Weighing Scale (Class II)"
+  category           String   // Non-Automatic Weighing Instrument (NAWI)
+  ruleVersion        String   // e.g. "LM-RULE-2026.1"
+  mpeMultiplier      Float    // Multiplier against verification interval 'e' (e.g. 1.0, 1.5, 2.0)
+  maxAllowedErrorPct Float?   // Optional max % error threshold
+  testPointsJson     String   // JSON string of default test load fractions e.g. "[0.1, 0.25, 0.5, 1.0]"
+  description        String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([typeCode])
+  @@index([ruleVersion])
+}
+
+model Instrument {
+  id                   String   @id @default(uuid())
+  ownerId              String
+  type                 String
+  manufacturer         String
+  model                String
+  serialNumber         String   @unique
+  maxCapacity          Float
+  verificationInterval Float
+  status               String   // REGISTERED, PENDING, VERIFIED, EXPIRED, REJECTED
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  owner                User     @relation(fields: [ownerId], references: [id])
+  applications         VerificationApplication[]
+
+  @@index([serialNumber])
+  @@index([ownerId])
+  @@index([status])
+  @@index([type])
+}
+
+model VerificationApplication {
+  id           String   @id @default(uuid())
+  instrumentId String
+  applicantId  String
+  status       String   // SUBMITTED, IN_PROGRESS, APPROVED, REJECTED
+  createdAt    DateTime @default(now())
+
+  instrument   Instrument @relation(fields: [instrumentId], references: [id])
+  applicant    User       @relation("Applicant", fields: [applicantId], references: [id])
+  inspection   VerificationInspection?
+
+  @@index([instrumentId])
+  @@index([applicantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model VerificationInspection {
+  id                String   @id @default(uuid())
+  applicationId     String   @unique
+  officerId         String
+  clientOperationId String?  @unique // Idempotent offline sync identifier
+  syncStatus        String   @default("DIRECT") // DIRECT, SYNCED_FROM_OFFLINE
+  ruleVersion       String   @default("LM-RULE-2026.1")
+  result            String   // PASS, FAIL, PENDING
+  remarks           String?
+  createdAt         DateTime @default(now())
+
+  application   VerificationApplication @relation(fields: [applicationId], references: [id])
+  officer       User                    @relation("Officer", fields: [officerId], references: [id])
+  readings      VerificationReading[]
+  certificate   Certificate?
+
+  @@index([applicationId])
+  @@index([officerId])
+  @@index([clientOperationId])
+  @@index([result])
+  @@index([syncStatus])
+}
+
+model VerificationReading {
+  id                  String   @id @default(uuid())
+  inspectionId        String
+  pointName           String   @default("Standard Load Point")
+  referenceLoad       Float
+  observedValue       Float
+  error               Float
+  percentageError     Float    @default(0.0)
+  maxPermissibleError Float
+  status              String   // PASS, FAIL
+
+  inspection          VerificationInspection @relation(fields: [inspectionId], references: [id])
+
+  @@index([inspectionId])
+}
+
+model Certificate {
+  id                String    @id @default(uuid())
+  inspectionId      String    @unique
+  certificateNumber String    @unique
+  issueDate         DateTime
+  expiryDate        DateTime
+  status            String    // VALID, EXPIRED, REVOKED
+  qrToken           String    @unique
+  revokedAt         DateTime?
+  revocationReason  String?
+  revokedBy         String?
+  createdAt         DateTime  @default(now())
+
+  inspection        VerificationInspection @relation(fields: [inspectionId], references: [id])
+
+  @@index([certificateNumber])
+  @@index([qrToken])
+  @@index([status])
+  @@index([expiryDate])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // INFO, WARNING, SUCCESS, ALERT
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model FederationLog {
+  id               String   @id @default(uuid())
+  operation        String   // CERTIFICATE_EXPORT, VERIFICATION_SYNC, STATE_LOOKUP
+  targetRepository String   // e.g. "NATIONAL_METROLOGY_GATEWAY_V1", "STATE_AP_METROLOGY"
+  recordReference  String   // Certificate No. or Instrument Serial
+  status           String   // SUCCESS, PENDING, REJECTED
+  payloadPreview   String?  // JSON string of standardized contract
+  timestamp        DateTime @default(now())
+
+  @@index([recordReference])
+  @@index([targetRepository])
+  @@index([timestamp])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String
+  metadata  String?
+  timestamp DateTime @default(now())
+
+  actor     User?    @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entity])
+  @@index([timestamp])
+}

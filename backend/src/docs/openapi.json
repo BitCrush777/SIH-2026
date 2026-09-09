@@ -1,0 +1,157 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "e-Maanak Sovereign Legal Metrology API",
+    "description": "Statutory verification, offline field synchronization, certificate authentication, and state federation APIs for measuring instruments. Developed for Smart India Hackathon 2026 (SIH26036).",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Department of Consumer Affairs, Ministry of Consumer Affairs, Food & Public Distribution",
+      "url": "https://consumeraffairs.nic.in"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api/v1",
+      "description": "Local Development & Federation Node (v1)"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate User / Officer",
+        "description": "Exchanges email and password for a JWT bearer token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "example": "techcorp@example.com" },
+                  "password": { "type": "string", "example": "owner123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Authenticated successfully with JWT" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/instruments": {
+      "get": {
+        "summary": "List Instruments",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "List of instruments matching filters" }
+        }
+      },
+      "post": {
+        "summary": "Register New Instrument",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "manufacturer", "model", "serialNumber", "maxCapacity", "verificationInterval"],
+                "properties": {
+                  "type": { "type": "string" },
+                  "manufacturer": { "type": "string" },
+                  "model": { "type": "string" },
+                  "serialNumber": { "type": "string" },
+                  "maxCapacity": { "type": "number" },
+                  "verificationInterval": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Instrument registered in state repository" }
+        }
+      }
+    },
+    "/verifications/sync": {
+      "post": {
+        "summary": "Idempotent Offline Field Synchronization",
+        "description": "Receives queued verification inspections completed in the field while offline. Authoritative evaluation occurs on the server.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientOperationId", "applicationId", "readings"],
+                "properties": {
+                  "clientOperationId": { "type": "string", "example": "OP-SYNC-882211" },
+                  "applicationId": { "type": "string" },
+                  "ruleVersion": { "type": "string", "example": "LM-RULE-2026.1" },
+                  "readings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["referenceLoad", "observedValue"],
+                      "properties": {
+                        "pointName": { "type": "string" },
+                        "referenceLoad": { "type": "number" },
+                        "observedValue": { "type": "number" }
+                      }
+                    }
+                  },
+                  "remarks": { "type": "string" },
+                  "clientCreatedAt": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Synchronized successfully (ACCEPTED or SYNCED_EXISTING)" },
+          "409": { "description": "Conflict or rule version mismatch" }
+        }
+      }
+    },
+    "/certificates/public/verify/{token}": {
+      "get": {
+        "summary": "Public QR Certificate Verification",
+        "description": "Unauthenticated public verification route queried when a QR code on a scale or certificate is scanned.",
+        "parameters": [
+          { "name": "token", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Sanitized legal metrology validity report" },
+          "404": { "description": "Invalid / unknown verification token" }
+        }
+      }
+    },
+    "/federation/health": {
+      "get": {
+        "summary": "State Federation Node Status",
+        "description": "Returns connection status and latency to national and state repository gateways.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Federation node health and recent exchanges" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
