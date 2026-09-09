@@ -29,7 +29,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. mobile PWA native shells, curl, same-origin)
-    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+    if (!origin || allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app')) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
       callback(new Error('CORS request blocked by statutory policy.'));
@@ -77,8 +77,14 @@ app.get(['/api/health', '/api/v1/health'], (req, res) => {
 
 // OpenAPI Spec JSON Endpoint
 app.get(['/api/v1/docs', '/api/docs/json'], (req, res) => {
-  const specPath = path.join(__dirname, 'src', 'docs', 'openapi.json');
-  if (fs.existsSync(specPath)) {
+  const candidatePaths = [
+    path.join(__dirname, 'src', 'docs', 'openapi.json'),
+    path.join(__dirname, '..', 'src', 'docs', 'openapi.json'),
+    path.join(process.cwd(), 'src', 'docs', 'openapi.json'),
+    path.join(process.cwd(), 'backend', 'src', 'docs', 'openapi.json')
+  ];
+  const specPath = candidatePaths.find(p => fs.existsSync(p));
+  if (specPath) {
     const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
     res.json(spec);
   } else {
@@ -156,21 +162,29 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log(`[e-Maanak Server] Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  console.log(`[e-Maanak Server] API v1 available at http://localhost:${PORT}/api/v1`);
-  console.log(`[e-Maanak Server] OpenAPI Documentation available at http://localhost:${PORT}/api/docs`);
-});
+let server: any = null;
+// Only start standalone listener when not in Vercel serverless environment
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
+  server = app.listen(PORT, () => {
+    console.log(`[e-Maanak Server] Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    console.log(`[e-Maanak Server] API v1 available at http://localhost:${PORT}/api/v1`);
+    console.log(`[e-Maanak Server] OpenAPI Documentation available at http://localhost:${PORT}/api/docs`);
+  });
+}
 
 // Graceful Process Shutdown
 function gracefulShutdown(signal: string) {
   console.log(`[e-Maanak Server] Received ${signal}. Starting graceful shutdown...`);
-  server.close(async () => {
-    console.log('[e-Maanak Server] Closed pending HTTP connections.');
-    await prisma.$disconnect();
-    console.log('[e-Maanak Server] Disconnected Prisma database client.');
-    process.exit(0);
-  });
+  if (server) {
+    server.close(async () => {
+      console.log('[e-Maanak Server] Closed pending HTTP connections.');
+      await prisma.$disconnect();
+      console.log('[e-Maanak Server] Disconnected Prisma database client.');
+      process.exit(0);
+    });
+  } else {
+    prisma.$disconnect().then(() => process.exit(0)).catch(() => process.exit(1));
+  }
 
   setTimeout(() => {
     console.error('[e-Maanak Server] Forcefully shutting down after timeout.');
@@ -180,3 +194,6 @@ function gracefulShutdown(signal: string) {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+export default app;
+export { app };

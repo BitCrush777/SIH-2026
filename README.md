@@ -168,8 +168,69 @@ To deploy with production PostgreSQL (e.g. Supabase, AWS RDS, GCP Cloud SQL):
    ```bash
    cd frontend
    npm run build
-   # Serve dist/ with Nginx, Cloudflare Pages, Vercel, or AWS S3+CloudFront
    ```
+
+---
+
+## 8. Vercel Multi-Service Deployment (Monorepo with Vercel Services)
+
+The repository is configured for automated unified deployment using **Vercel Services** via root [`vercel.json`](file:///d:/SIH%20project/vercel.json):
+
+```
+                    VERCEL MONOREPO DEPLOYMENT
+                                │
+                  ┌─────────────┴─────────────┐
+                  │                           │
+                  ▼                           ▼
+            Frontend Service             Backend Service
+          (React + Vite SPA)         (Express + TypeScript)
+                  │                           │
+                  │                           ▼
+                  │                      Prisma ORM
+                  │                           │
+                  │                           ▼
+                  │                  Supabase PostgreSQL
+                  │
+                  └─────── /api/* ────────────┘
+```
+
+### 1. Unified Routing Configuration (`vercel.json`)
+* **Frontend Service**: Root `frontend/`, Framework `vite`.
+* **Backend Service**: Root `backend/`, Framework `express`, Entrypoint `index.ts`.
+* **Clean Same-Domain API Rewrites**:
+  * `/api` and `/api/*` → routed internally to the **backend** Express service.
+  * `/*` → routed to the **frontend** React/Vite SPA (with full HTML5 history / client routing support).
+
+### 2. Environment Variables Configuration in Vercel Dashboard
+
+Configure these under **Project Settings → Environment Variables**:
+
+| Variable | Scope / Target | Description | Example / Recommended Value |
+| :--- | :--- | :--- | :--- |
+| `VITE_API_URL` | Frontend | API base path | `/api/v1` *(enables same-domain routing)* |
+| `VITE_SUPABASE_URL` | Frontend | Supabase Project URL | `https://pmvwmiyuqroeqypxadto.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Frontend | Supabase Public Anonymous Key | `sb_publishable_...` |
+| `DATABASE_URL` | Backend | Supabase PostgreSQL Connection Pooler | `postgresql://postgres.[REF]:[PASS]@[POOLER]:5432/postgres?sslmode=require` |
+| `JWT_SECRET` | Backend | Statutory RBAC token signature secret | `[SECURE_RANDOM_SECRET]` |
+| `SUPABASE_URL` | Backend | Supabase API URL | `https://pmvwmiyuqroeqypxadto.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Backend | Backend-only Admin Key *(Never expose to client)* | `sb_secret_...` |
+| `ALLOWED_ORIGINS` | Backend | Permitted CORS origins | `https://your-project.vercel.app,http://localhost:5173` |
+| `NODE_ENV` | Backend | Node execution environment | `production` |
+
+> [!IMPORTANT]
+> `DATABASE_URL`, `JWT_SECRET`, and `SUPABASE_SERVICE_ROLE_KEY` are backend-only secrets and must **never** be prefixed with `VITE_` or exposed to the client bundle.
+
+### 3. Production Health & Documentation Endpoints
+* **Health Check**: `GET https://<your-deployment>.vercel.app/api/v1/health`
+* **OpenAPI 3.0 Interactive Docs**: `GET https://<your-deployment>.vercel.app/api/docs`
+* **Raw OpenAPI JSON**: `GET https://<your-deployment>.vercel.app/api/v1/docs`
+* **Public Citizen QR Verification**: `GET https://<your-deployment>.vercel.app/verify/:token` (requires zero authentication)
+
+### 4. Deploying to Vercel
+1. Connect the GitHub repository `BitCrush777/SIH-2026` in the [Vercel Dashboard](https://vercel.com/new).
+2. Vercel automatically detects the root `vercel.json` and configures the `frontend` and `backend` services.
+3. Add the Environment Variables listed above in the dashboard.
+4. Click **Deploy**. Vercel will build both services in parallel and deploy them behind a unified domain.
 
 ---
 

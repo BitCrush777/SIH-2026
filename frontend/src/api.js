@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const API_URL = import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== ''
+  ? import.meta.env.VITE_API_URL
+  : (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1');
 
 /**
  * Centralized API Client with automated Supabase token attachment,
