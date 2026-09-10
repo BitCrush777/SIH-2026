@@ -1,6 +1,6 @@
-﻿{
-  "name": "e-maanak-sovereign-legal-metrology",
-  "version": "6.2.0",
+{
+  "name": "sih-2026",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "postinstall": "npm --prefix backend install && npx --prefix backend prisma generate && npm --prefix backend run build && npm --prefix frontend install && npm --prefix frontend run build",
