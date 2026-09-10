@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { supabaseAdmin, isSupabaseConfigured } from '../src/utils/supabaseClient';
 
 dotenv.config();

@@ -172,27 +172,27 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   });
 }
 
-// Graceful Process Shutdown
-function gracefulShutdown(signal: string) {
-  console.log(`[e-Maanak Server] Received ${signal}. Starting graceful shutdown...`);
-  if (server) {
-    server.close(async () => {
-      console.log('[e-Maanak Server] Closed pending HTTP connections.');
-      await prisma.$disconnect();
-      console.log('[e-Maanak Server] Disconnected Prisma database client.');
-      process.exit(0);
-    });
-  } else {
-    prisma.$disconnect().then(() => process.exit(0)).catch(() => process.exit(1));
-  }
-
-  setTimeout(() => {
-    console.error('[e-Maanak Server] Forcefully shutting down after timeout.');
-    process.exit(1);
-  }, 10000);
-}
-
+// Graceful Process Shutdown (local/non-serverless only)
 if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
+  const gracefulShutdown = (signal: string) => {
+    console.log(`[e-Maanak Server] Received ${signal}. Starting graceful shutdown...`);
+    if (server) {
+      server.close(async () => {
+        console.log('[e-Maanak Server] Closed pending HTTP connections.');
+        await prisma.$disconnect();
+        console.log('[e-Maanak Server] Disconnected Prisma database client.');
+        process.exit(0);
+      });
+    } else {
+      prisma.$disconnect().then(() => process.exit(0)).catch(() => process.exit(1));
+    }
+
+    setTimeout(() => {
+      console.error('[e-Maanak Server] Forcefully shutting down after timeout.');
+      process.exit(1);
+    }, 10000);
+  };
+
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
