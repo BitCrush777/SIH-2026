@@ -192,12 +192,9 @@ function gracefulShutdown(signal: string) {
   }, 10000);
 }
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-module.exports = app;
-module.exports.default = app;
-module.exports.app = app;
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+}
 
 export default app;
-export { app };
