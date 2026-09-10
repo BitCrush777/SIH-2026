@@ -75,7 +75,7 @@ export async function exportToFederatedRepository(
     jurisdiction: 'IN-LEGAL-METROLOGY',
     issuingAuthorityCode: 'DOCA-LM-CENTRAL-NODE-01',
     certificateNumber: cert.certificateNumber,
-    qrVerificationUrl: `${process.env.PUBLIC_VERIFY_BASE_URL || 'http://localhost:5173/verify'}/${cert.qrToken}`,
+    qrVerificationUrl: `${process.env.PUBLIC_VERIFY_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/verify` : 'http://localhost:5173/verify')}/${cert.qrToken}`,
     instrument: {
       serialNumber: inst.serialNumber,
       type: inst.type,

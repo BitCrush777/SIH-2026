@@ -195,5 +195,9 @@ function gracefulShutdown(signal: string) {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
+module.exports = app;
+module.exports.default = app;
+module.exports.app = app;
+
 export default app;
 export { app };

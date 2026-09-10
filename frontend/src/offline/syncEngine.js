@@ -1,5 +1,5 @@
 import { offlineDB } from './db';
-import { api } from '../api';
+import { api, getApiBaseUrl } from '../api';
 
 class SyncEngine {
   constructor() {
@@ -33,9 +33,7 @@ class SyncEngine {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
-      const apiBase = import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== ''
-        ? import.meta.env.VITE_API_URL
-        : (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1');
+      const apiBase = getApiBaseUrl();
       const res = await fetch(`${apiBase}/health`, {
         signal: controller.signal,
         cache: 'no-store'

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/prisma';
 import { supabaseAdmin, isSupabaseConfigured } from '../utils/supabaseClient';
-const JWT_SECRET = process.env.JWT_SECRET || 'sih2026-super-secret-jwt-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-sih';
 const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET;
 
 export interface AuthUser {
@@ -41,7 +41,16 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   if (!supabaseAuthId) {
     try {
       const secretToVerify = SUPABASE_JWT_SECRET || JWT_SECRET;
-      const decoded = jwt.verify(token, secretToVerify) as any;
+      let decoded: any;
+      try {
+        decoded = jwt.verify(token, secretToVerify) as any;
+      } catch (err1) {
+        if (!process.env.JWT_SECRET) {
+          decoded = jwt.verify(token, 'sih2026-super-secret-jwt-key') as any;
+        } else {
+          throw err1;
+        }
+      }
       supabaseAuthId = decoded.sub || decoded.supabaseAuthId || decoded.id;
       email = decoded.email;
     } catch (jwtErr) {

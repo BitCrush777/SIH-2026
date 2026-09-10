@@ -1,8 +1,19 @@
 import { supabase } from './supabase';
 
-const API_URL = import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== ''
-  ? import.meta.env.VITE_API_URL
-  : (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1');
+export const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+    const trimmed = envUrl.trim();
+    // Guard against accidental localhost/127.0.0.1 in production builds
+    if (import.meta.env.PROD && (trimmed.includes('localhost') || trimmed.includes('127.0.0.1'))) {
+      return '/api/v1';
+    }
+    return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+  }
+  return import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1';
+};
+
+const API_URL = getApiBaseUrl();
 
 /**
  * Centralized API Client with automated Supabase token attachment,
@@ -58,8 +69,22 @@ export async function apiClient(endpoint, options = {}) {
   }
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || errorData.message || `Request failed with status ${res.status}`);
+    let errorMessage = `Request failed with status ${res.status}`;
+    try {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } else {
+        const text = await res.text();
+        if (text && !text.includes('<!DOCTYPE html>')) {
+          errorMessage = text.slice(0, 150);
+        }
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errorMessage);
   }
 
   const contentType = res.headers.get('content-type');

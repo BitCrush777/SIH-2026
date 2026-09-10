@@ -124,34 +124,26 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    let authUser = null;
-
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Invalid credentials. Please verify your sign-in details.');
-      }
-
-      if (data?.session) {
-        localStorage.setItem('token', data.session.access_token);
-        const profile = await api.getMe();
-        authUser = profile.user;
-      }
-    } else {
-      // Direct backend auth / fallback if Supabase client not configured
-      const data = await api.login(email, password);
-      localStorage.setItem('token', data.token);
-      authUser = data.user;
+    // Primary Statutory Authentication via Express Backend JWT & RBAC
+    const data = await api.login(email, password);
+    if (!data?.token || !data?.user) {
+      throw new Error('Authentication response was invalid.');
     }
 
-    setUser(authUser);
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
     setSessionExpired(false);
     fetchNotifications();
-    return authUser;
+
+    // Non-blocking background sync for Supabase client if configured
+    if (isSupabaseConfigured()) {
+      supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password
+      }).catch(() => {});
+    }
+
+    return data.user;
   };
 
   const logout = async () => {
