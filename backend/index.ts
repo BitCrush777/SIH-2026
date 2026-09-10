@@ -203,6 +203,25 @@ try {
     `);
   });
 
+  // Serve static frontend build if present (for Render, Railway, Docker, or unified hosting)
+  const candidateFrontendDirs = [
+    path.join(__dirname, '..', 'frontend', 'dist'),
+    path.join(__dirname, '..', '..', 'frontend', 'dist'),
+    path.join(process.cwd(), 'frontend', 'dist'),
+    path.join(process.cwd(), 'dist'),
+  ];
+  const frontendDir = candidateFrontendDirs.find(d => fs.existsSync(d));
+  if (frontendDir) {
+    console.log(`[e-Maanak Server] Serving frontend static assets from: ${frontendDir}`);
+    app.use(express.static(frontendDir));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api') || req.path.startsWith('/v1')) {
+        return next();
+      }
+      res.sendFile(path.join(frontendDir, 'index.html'));
+    });
+  }
+
   // Production Error Sanitizer
   app.use(errorHandler);
 

@@ -1,0 +1,19 @@
+﻿services:
+  - type: web
+    name: e-maanak
+    runtime: node
+    plan: free
+    buildCommand: npm --prefix backend install && npx --prefix backend prisma generate && npm --prefix backend run build && npm --prefix frontend install && npm --prefix frontend run build
+    startCommand: npm --prefix backend start
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: super-secret-key-for-sih
+      - key: SUPABASE_URL
+        value: https://pmvwmiyuqroeqypxadto.supabase.co
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
