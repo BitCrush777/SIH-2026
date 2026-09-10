@@ -115,7 +115,10 @@ try {
   // 1. Versioned API Namespace (v1)
   mountRoutes('/api/v1');
 
-  // 2. Backward-Compatible API Namespace (v0/default)
+  // 2. Direct Versioned Namespace without /api prefix
+  mountRoutes('/v1');
+
+  // 3. Backward-Compatible API Namespace (v0/default)
   mountRoutes('/api');
 
   // OpenAPI Spec JSON Endpoint
@@ -224,8 +227,8 @@ try {
 const PORT = process.env.PORT || 5000;
 
 let server: any = null;
-// Only start standalone listener when not in Vercel serverless environment
-if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
+// Always start listener so Vercel Express framework can intercept it
+if (process.env.NODE_ENV !== 'test') {
   server = app.listen(PORT, () => {
     console.log(`[e-Maanak Server] Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
     console.log(`[e-Maanak Server] API v1 available at http://localhost:${PORT}/api/v1`);
