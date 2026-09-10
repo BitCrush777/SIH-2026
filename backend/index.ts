@@ -42,35 +42,13 @@ app.use(cors({
 // Body parsing with payload size boundary limit
 app.use(express.json({ limit: '1mb' }));
 
-// Diagnostic health endpoint (mounted FIRST so it always responds even if other modules fail to load)
-app.get(['/api/health', '/api/v1/health'], (req, res) => {
+// Statutory Health Check Endpoint
+app.get(['/api/health', '/api/v1/health', '/health'], (req, res) => {
   res.json({
-    status: initError ? 'degraded' : 'healthy',
-    environment: process.env.NODE_ENV || 'development',
-    version: '6.1.0-vercel-fix',
-    timestamp: new Date().toISOString(),
-    hasDbUrl: !!process.env.DATABASE_URL,
-    hasJwtSecret: !!process.env.JWT_SECRET,
-    hasSupabaseUrl: !!process.env.SUPABASE_URL,
-    hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    initError: initError ? initError.message : null,
-    nodeVersion: process.version,
-    isVercel: !!process.env.VERCEL,
-  });
-});
-
-// Debug endpoint for Vercel diagnostics
-app.get(['/api/debug', '/api/v1/debug'], (req, res) => {
-  res.json({
-    env: {
-      DATABASE_URL: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET',
-      JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'NOT SET (using default)',
-      SUPABASE_URL: process.env.SUPABASE_URL || 'NOT SET',
-      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET',
-      NODE_ENV: process.env.NODE_ENV || 'not set',
-      VERCEL: process.env.VERCEL || 'not set',
-    },
-    initError: initError ? { message: initError.message, stack: initError.stack } : null,
+    status: 'healthy',
+    service: 'e-maanak-backend',
+    version: '6.3.0-production-ready',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -243,15 +221,15 @@ try {
   });
 }
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
+const HOST = '0.0.0.0';
 
 let server: any = null;
-// Always start listener so Vercel Express framework can intercept it
 if (process.env.NODE_ENV !== 'test') {
-  server = app.listen(PORT, () => {
-    console.log(`[e-Maanak Server] Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-    console.log(`[e-Maanak Server] API v1 available at http://localhost:${PORT}/api/v1`);
-    console.log(`[e-Maanak Server] OpenAPI Documentation available at http://localhost:${PORT}/api/docs`);
+  server = app.listen(PORT, HOST, () => {
+    console.log(`[e-Maanak Server] Running in ${process.env.NODE_ENV || 'development'} mode on http://${HOST}:${PORT}`);
+    console.log(`[e-Maanak Server] API v1 available at http://${HOST}:${PORT}/api/v1`);
+    console.log(`[e-Maanak Server] OpenAPI Documentation available at http://${HOST}:${PORT}/api/docs`);
   });
 }
 

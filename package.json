@@ -9,6 +9,6 @@
     "dev": "npm --prefix backend run dev"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0 <=22.x"
   }
 }

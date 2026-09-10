@@ -1,15 +1,19 @@
 import { supabase } from './supabase';
 
 export const getApiBaseUrl = () => {
-  // In production (Vercel deployment), always route to relative /api/v1
-  // This guarantees same-origin rewrites work regardless of what VITE_API_URL is set to
-  if (import.meta.env.PROD) {
-    return '/api/v1';
-  }
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
-    const trimmed = envUrl.trim();
-    return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+    let trimmed = envUrl.trim();
+    if (trimmed.endsWith('/')) trimmed = trimmed.slice(0, -1);
+    // Ensure the statutory API namespace is present
+    if (!trimmed.endsWith('/api/v1') && !trimmed.endsWith('/api')) {
+      return `${trimmed}/api/v1`;
+    }
+    return trimmed;
+  }
+  // If no external API URL is configured in production, fallback to same-origin relative path
+  if (import.meta.env.PROD) {
+    return '/api/v1';
   }
   return 'http://localhost:5000/api/v1';
 };

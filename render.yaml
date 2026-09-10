@@ -1,14 +1,18 @@
 services:
+  # SERVICE 1: Backend Web Service
   - type: web
-    name: e-maanak
+    name: e-maanak-backend
     runtime: node
     plan: free
-    buildCommand: npm --prefix backend install && npx --prefix backend prisma generate && npm --prefix backend run build && npm --prefix frontend install && npm --prefix frontend run build
-    startCommand: npm --prefix backend start
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
     healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 22.14.0
       - key: JWT_SECRET
         value: sih2026-super-secret-jwt-key
       - key: SUPABASE_URL
@@ -16,4 +20,27 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+  # SERVICE 2: Frontend Static Site
+  - type: web
+    name: e-maanak-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: VITE_SUPABASE_URL
+        value: https://pmvwmiyuqroeqypxadto.supabase.co
+      - key: VITE_SUPABASE_ANON_KEY
+        value: sb_publishable_DYXfHRq6KYNRGJVc12wAwA_JQIi1bJa
+      - key: VITE_API_URL
         sync: false
