@@ -78,14 +78,22 @@ app.get(['/api/debug', '/api/v1/debug'], (req, res) => {
 try {
   // These imports are inline to catch any module-level errors
   const { prisma } = require('./src/utils/prisma');
-  const authRoutes = require('./src/routes/auth').default;
-  const instrumentRoutes = require('./src/routes/instruments').default;
-  const verificationRoutes = require('./src/routes/verifications').default;
-  const certificateRoutes = require('./src/routes/certificates').default;
-  const notificationRoutes = require('./src/routes/notifications').default;
-  const analyticsRoutes = require('./src/routes/analytics').default;
-  const auditLogRoutes = require('./src/routes/auditLogs').default;
-  const federationRoutes = require('./src/routes/federation').default;
+  const authModule = require('./src/routes/auth');
+  const authRoutes = authModule.default || authModule;
+  const instrumentModule = require('./src/routes/instruments');
+  const instrumentRoutes = instrumentModule.default || instrumentModule;
+  const verificationModule = require('./src/routes/verifications');
+  const verificationRoutes = verificationModule.default || verificationModule;
+  const certificateModule = require('./src/routes/certificates');
+  const certificateRoutes = certificateModule.default || certificateModule;
+  const notificationModule = require('./src/routes/notifications');
+  const notificationRoutes = notificationModule.default || notificationModule;
+  const analyticsModule = require('./src/routes/analytics');
+  const analyticsRoutes = analyticsModule.default || analyticsModule;
+  const auditLogModule = require('./src/routes/auditLogs');
+  const auditLogRoutes = auditLogModule.default || auditLogModule;
+  const federationModule = require('./src/routes/federation');
+  const federationRoutes = federationModule.default || federationModule;
   const { rateLimiter, errorHandler } = require('./src/middleware/securityMiddleware');
 
   // Rate Limiting
@@ -251,4 +259,5 @@ if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
-export default app;
+(app as any).default = app;
+export = app;

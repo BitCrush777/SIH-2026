@@ -1,16 +1,17 @@
 import { supabase } from './supabase';
 
 export const getApiBaseUrl = () => {
+  // In production (Vercel deployment), always route to relative /api/v1
+  // This guarantees same-origin rewrites work regardless of what VITE_API_URL is set to
+  if (import.meta.env.PROD) {
+    return '/api/v1';
+  }
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
     const trimmed = envUrl.trim();
-    // Guard against accidental localhost/127.0.0.1 in production builds
-    if (import.meta.env.PROD && (trimmed.includes('localhost') || trimmed.includes('127.0.0.1'))) {
-      return '/api/v1';
-    }
     return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
   }
-  return import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1';
+  return 'http://localhost:5000/api/v1';
 };
 
 const API_URL = getApiBaseUrl();
